@@ -65,7 +65,8 @@ function renderOrders() {
   el("ordersBody").innerHTML = rows.map(o => {
     const selected = o.order_no === state.selectedOrderNo ? "selected-row" : "";
     const spec = [o.requested_size, o.requested_pound, o.requested_type].filter(Boolean).join(" / ") || "未抽出";
-    return `<tr class="clickable ${selected}" onclick="selectOrder('${encodeURIComponent(o.order_no)}')"><td>${status(o.order_status)}</td><td><b>${esc(o.order_no)}</b></td><td>${esc(o.customer_name)}<br><small>${esc(o.member_code)}</small></td><td>${esc(spec)}</td></tr>`;
+    const type = getOrderType(o);
+    return `<tr class="clickable ${selected}" onclick="selectOrder('${encodeURIComponent(o.order_no)}')"><td>${status(o.order_status)}<br><small>${esc(type)}</small></td><td><b>${esc(o.order_no)}</b></td><td>${esc(o.customer_name)}<br><small>${esc(o.member_code)}</small></td><td>${esc(spec)}</td></tr>`;
   }).join("") || '<tr><td colspan="4">対象注文がありません</td></tr>';
 }
 
@@ -99,15 +100,31 @@ function filterRims() {
 }
 
 function renderHistory() {
-  el("historyCountBadge").textContent = `履歴：${state.rentals.length}件`;
-  el("historyBody").innerHTML = historyRows(state.rentals);
+  const rows = filterHistoryByMember(state.rentals);
+  el("historyCountBadge").textContent = `履歴：${rows.length}件 / 全体：${state.rentals.length}件`;
+  el("historyBody").innerHTML = historyRows(rows);
 }
 
 function selectOrder(encoded) {
   state.selectedOrderNo = decodeURIComponent(encoded);
   el("selectedOrderNo").value = state.selectedOrderNo;
+  renderSelectedOrderInfo();
   renderOrders();
   el("barcodeInput").focus();
+}
+
+function renderSelectedOrderInfo() {
+  const order = state.orders.find(o => String(o.order_no) === String(state.selectedOrderNo));
+  if (!order) {
+    showMessage("selectedOrderInfo", "注文を選択すると使用者名が表示されます");
+    return;
+  }
+  showMessage("selectedOrderInfo", [
+    `区分: ${getOrderType(order)}`,
+    `使用者名: ${order.customer_name || ""}`,
+    `会員番号: ${order.member_code || ""}`,
+    `条件: ${[order.requested_size, order.requested_pound, order.requested_type].filter(Boolean).join(" / ") || "未指定"}`
+  ].join("\n"), "ok");
 }
 
 function selectRimHistory(encoded) {
@@ -173,6 +190,57 @@ async function saveRim(event) {
   showMessage("rimFormMessage", "リムを登録 / 更新しました。", "ok");
   clearRimForm();
   await reloadAll();
+}
+
+async function saveManualOrder(event) {
+  event.preventDefault();
+  const orderType = el("manualOrderType").value;
+  const orderNo = el("manualOrderNo").value.trim() || `MANUAL-${Date.now()}`;
+  const customerName = el("manualCustomerName").value.trim();
+  if (!customerName) return showMessage("manualOrderMessage", "使用者名は必須です。", "err");
+
+  const payload = {
+    order_no: orderNo,
+    order_date: new Date().toISOString(),
+    member_code: el("manualMemberCode").value.trim(),
+    customer_name: customerName,
+    product_name: `レンタルリム ${orderType}`,
+    option_text: [
+      `区分:${orderType}`,
+      `サイズ:${el("manualRequestedSize").value.trim()}`,
+      `ポンド:${el("manualRequestedPound").value.trim()}`,
+      `種類:${el("manualRequestedType").value.trim()}`,
+      `備考:${el("manualOrderNote").value.trim()}`
+    ].filter(v => !v.endsWith(":")).join(" / "),
+    quantity: 1,
+    requested_size: el("manualRequestedSize").value.trim(),
+    requested_pound: el("manualRequestedPound").value.trim(),
+    requested_type: el("manualRequestedType").value.trim(),
+    requested_note: el("manualOrderNote").value.trim(),
+    order_status: STATUS_WAITING,
+    imported_at: new Date().toISOString()
+  };
+
+  const existing = state.orders.find(o => o.order_no === orderNo);
+  if (existing) {
+    await sb(`rental_orders?order_no=eq.${encodeURIComponent(orderNo)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    });
+  } else {
+    await sb("rental_orders", {
+      method: "POST",
+      body: JSON.stringify([payload])
+    });
+  }
+
+  el("manualOrderForm").reset();
+  showMessage("manualOrderMessage", `注文を登録しました。\n注文番号: ${orderNo}`, "ok");
+  await reloadAll();
+  state.selectedOrderNo = orderNo;
+  el("selectedOrderNo").value = orderNo;
+  renderSelectedOrderInfo();
+  renderOrders();
 }
 
 async function importRimCsv(event) {
@@ -362,7 +430,7 @@ async function scanReturn() {
   if (!rim) return showMessage("returnInfo", "リムが見つかりません。", "err");
   const rental = state.rentals.find(r => r.status === STATUS_OUT && (r.rim_no === rim.rim_no || r.rim_barcode === rim.barcode));
   if (!rental) return showMessage("returnInfo", "このリムに貸出中履歴がありません。", "warn");
-  showMessage("returnInfo", [`注文番号: ${rental.order_no}`, `会員番号: ${rental.member_code}`, `顧客名: ${rental.customer_name}`, `リム番号: ${rental.rim_no}`, `貸出日時: ${fmt(rental.checked_out_at)}`, `担当者: ${rental.staff_name}`].join("\n"), "ok");
+  showMessage("returnInfo", [`使用者名: ${rental.customer_name}`, `会員番号: ${rental.member_code}`, `注文番号: ${rental.order_no}`, `リム番号: ${rental.rim_no}`, `貸出日時: ${fmt(rental.checked_out_at)}`, `担当者: ${rental.staff_name}`].join("\n"), "ok");
 }
 
 async function returnRim() {
@@ -438,10 +506,31 @@ function validateCheckout(order, rim) {
   if (order.order_status !== STATUS_WAITING) warnings.push("この注文は未貸出ではありません。");
   if (rim.status === STATUS_OUT) warnings.push("このリムは貸出中です。二重貸出はできません。");
   if (rim.status !== STATUS_AVAILABLE) warnings.push(`このリム状態は「${rim.status}」です。`);
+  if (rim.current_customer_name && order.customer_name && String(rim.current_customer_name).trim() !== String(order.customer_name).trim()) {
+    warnings.push(`使用者名が一致しません。注文「${order.customer_name}」 / リム現在情報「${rim.current_customer_name}」。確認して続行できます。`);
+  }
+  if (rim.current_member_code && order.member_code && String(rim.current_member_code).trim() !== String(order.member_code).trim()) {
+    warnings.push(`会員番号が一致しません。注文「${order.member_code}」 / リム現在情報「${rim.current_member_code}」。確認して続行できます。`);
+  }
   [["requested_size", "size", "サイズ"], ["requested_pound", "pound", "ポンド"], ["requested_type", "rim_type", "種類"]].forEach(([ok, rk, label]) => {
     if (order[ok] && rim[rk] && String(order[ok]).trim() !== String(rim[rk]).trim()) warnings.push(`${label}が注文条件「${order[ok]}」とリム台帳「${rim[rk]}」で一致しません。`);
   });
   return warnings;
+}
+
+function filterHistoryByMember(rows) {
+  const q = el("memberHistorySearchInput")?.value.trim().toLowerCase() || "";
+  if (!q) return rows;
+  return rows.filter(r => [r.member_code, r.customer_name, r.order_no].join(" ").toLowerCase().includes(q));
+}
+
+function getOrderType(order) {
+  const text = [order.product_name, order.option_text, order.requested_note].join(" ");
+  if (text.includes("交換")) return "交換";
+  if (text.includes("終了")) return "終了";
+  if (text.includes("新規登録")) return "新規登録";
+  if (text.includes("手入力")) return "手入力";
+  return "";
 }
 
 function historyRows(rows) {
@@ -464,6 +553,16 @@ function fmt(value) { if (!value) return ""; const d = new Date(value); return N
 
 el("reloadBtn").addEventListener("click", reloadAll);
 el("orderSearchInput").addEventListener("input", renderOrders);
+el("memberHistorySearchInput").addEventListener("input", () => {
+  renderHistory();
+  const q = el("memberHistorySearchInput").value.trim().toLowerCase();
+  if (q) {
+    const rows = state.rentals.filter(r => [r.member_code, r.customer_name, r.order_no].join(" ").toLowerCase().includes(q));
+    state.currentRimHistory = rows;
+    el("rimHistoryBadge").textContent = `会員検索：${rows.length}件`;
+    el("rimHistoryBody").innerHTML = historyRows(rows);
+  }
+});
 el("customerRimSearchInput").addEventListener("input", renderRims);
 el("rimSearchInput").addEventListener("input", renderRims);
 el("availableSizeFilter").addEventListener("input", renderRims);
@@ -477,6 +576,7 @@ el("returnBarcodeInput").addEventListener("keydown", e => { if (e.key === "Enter
 el("rimHistoryBarcodeInput").addEventListener("keydown", e => { if (e.key === "Enter") loadRimHistory(); });
 el("loadRimHistoryBtn").addEventListener("click", loadRimHistory);
 el("staffForm").addEventListener("submit", addStaff);
+el("manualOrderForm").addEventListener("submit", saveManualOrder);
 el("rimForm").addEventListener("submit", saveRim);
 el("clearRimFormBtn").addEventListener("click", clearRimForm);
 el("rimCsvFile").addEventListener("change", importRimCsv);

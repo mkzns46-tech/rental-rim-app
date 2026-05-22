@@ -36,6 +36,7 @@
               <input id="selectedOrderNo" readonly placeholder="未選択">
             </label>
           </div>
+          <div id="selectedOrderInfo" class="message">注文を選択すると使用者名が表示されます</div>
 
           <div class="table-wrap small-table">
             <table>
@@ -77,6 +78,51 @@
           </label>
           <button id="returnBtn" class="danger" type="button">返却済みに変更</button>
           <div id="returnMessage" class="message"></div>
+        </section>
+
+        <section class="card pc-only-section order-admin-section">
+          <div class="section-title">
+            <h2>注文登録</h2>
+            <div class="badge muted">手入力 / Makeshop補助</div>
+          </div>
+          <p class="section-note">Makeshop抜きの貸出や、API連携前の仮登録に使います</p>
+          <form id="manualOrderForm">
+            <div class="row three">
+              <label>区分
+                <select id="manualOrderType">
+                  <option value="新規登録">新規登録</option>
+                  <option value="交換">交換</option>
+                  <option value="終了">終了</option>
+                  <option value="手入力">手入力</option>
+                </select>
+              </label>
+              <label>注文番号
+                <input id="manualOrderNo" placeholder="空欄なら自動採番">
+              </label>
+              <label>会員番号
+                <input id="manualMemberCode" placeholder="例：10001">
+              </label>
+            </div>
+            <label>使用者名 <span class="required">必須</span>
+              <input id="manualCustomerName" required placeholder="例：山田 太郎">
+            </label>
+            <div class="row three">
+              <label>サイズ
+                <input id="manualRequestedSize" placeholder="例：M">
+              </label>
+              <label>ポンド
+                <input id="manualRequestedPound" placeholder="例：10">
+              </label>
+              <label>種類
+                <input id="manualRequestedType" placeholder="例：標準">
+              </label>
+            </div>
+            <label>備考
+              <input id="manualOrderNote" placeholder="Makeshop外対応、交換理由など">
+            </label>
+            <button type="submit">注文を登録</button>
+          </form>
+          <div id="manualOrderMessage" class="message">手入力注文は未貸出として登録されます</div>
         </section>
 
         <section class="card pc-only-section">
@@ -200,9 +246,14 @@
             </div>
           </div>
           <div class="history-search-box">
-            <label>リム履歴検索
-              <input id="rimHistoryBarcodeInput" placeholder="バーコードを入力またはスキャン">
-            </label>
+            <div class="row two">
+              <label>リム履歴検索
+                <input id="rimHistoryBarcodeInput" placeholder="バーコードを入力またはスキャン">
+              </label>
+              <label>会員別検索
+                <input id="memberHistorySearchInput" placeholder="会員番号・使用者名で履歴検索">
+              </label>
+            </div>
           </div>
           <button id="loadRimHistoryBtn" class="secondary" type="button">履歴を表示</button>
           <div class="table-wrap">

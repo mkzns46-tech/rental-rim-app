@@ -5,6 +5,7 @@
 ## 使い方
 
 1. Supabase SQL Editorで `supabase_rental_rim_frontend_rls.sql` を実行します。
+   手入力注文の備考列がない場合は `supabase_rental_order_extra_fields.sql` も実行します。
 2. `app.js` の `SUPABASE_URL` と `SUPABASE_API_KEY` を自分のSupabaseプロジェクトに合わせます。
 3. `index.html` をブラウザで開きます。
 4. Vercelに置く場合は、このフォルダをGitHubに上げてVercelでデプロイします。
