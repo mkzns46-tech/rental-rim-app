@@ -6,7 +6,7 @@ const STATUS_OUT = "貸出中";
 const STATUS_WAITING = "未貸出";
 const STATUS_RETURNED = "返却済";
 
-let state = { orders: [], rims: [], rentals: [], staff: [], selectedOrderNo: "" };
+let state = { orders: [], rims: [], rentals: [], staff: [], selectedOrderNo: "", currentRimHistory: [] };
 const el = id => document.getElementById(id);
 
 window.addEventListener("error", e => showMessage("checkoutMessage", "起動エラー。\n" + (e.message || ""), "err"));
@@ -211,15 +211,19 @@ async function importRimCsv(event) {
 }
 
 function downloadRimSampleCsv() {
-  const csv = [
+  downloadCsv("rental_rims_sample.csv", [
     ["rim_no", "barcode", "size", "pound", "rim_type", "notes", "status"],
     ["RIM-001", "123456789001", "M", "10", "標準", "サンプル", "在庫"]
-  ].map(row => row.map(csvCell).join(",")).join("\n");
+  ]);
+}
+
+function downloadCsv(filename, rows) {
+  const csv = rows.map(row => row.map(csvCell).join(",")).join("\n");
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "rental_rims_sample.csv";
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -401,8 +405,32 @@ async function loadRimHistory() {
     return;
   }
   const histories = state.rentals.filter(r => r.rim_no === rim.rim_no || r.rim_barcode === rim.barcode);
+  state.currentRimHistory = histories;
   el("rimHistoryBadge").textContent = `${rim.rim_no}：${histories.length}件`;
   el("rimHistoryBody").innerHTML = historyRows(histories);
+}
+
+function downloadRimLedgerCsv() {
+  const rows = filterRims();
+  downloadCsv("rental_rims.csv", [
+    ["状態", "リム番号", "バーコード", "サイズ", "ポンド", "種類", "備考", "貸出先会員番号", "貸出先顧客名", "現在注文番号"],
+    ...rows.map(r => [r.status, r.rim_no, r.barcode, r.size, r.pound, r.rim_type, r.notes, r.current_member_code, r.current_customer_name, r.current_order_no])
+  ]);
+}
+
+function downloadCurrentRimHistoryCsv() {
+  downloadCsv("rental_rim_history.csv", historyCsvRows(state.currentRimHistory));
+}
+
+function downloadAllHistoryCsv() {
+  downloadCsv("rental_all_history.csv", historyCsvRows(state.rentals));
+}
+
+function historyCsvRows(rows) {
+  return [
+    ["貸出日時", "返却日時", "状態", "リム番号", "リムバーコード", "担当者", "注文番号", "会員番号", "顧客名", "貸出時警告", "返却担当者", "返却メモ"],
+    ...rows.map(r => [r.checked_out_at, r.returned_at, r.status, r.rim_no, r.rim_barcode, r.staff_name, r.order_no, r.member_code, r.customer_name, r.checkout_warning, r.return_staff_name, r.return_memo])
+  ];
 }
 
 function validateCheckout(order, rim) {
@@ -453,5 +481,8 @@ el("rimForm").addEventListener("submit", saveRim);
 el("clearRimFormBtn").addEventListener("click", clearRimForm);
 el("rimCsvFile").addEventListener("change", importRimCsv);
 el("downloadRimSampleCsvBtn").addEventListener("click", downloadRimSampleCsv);
+el("downloadRimLedgerCsvBtn").addEventListener("click", downloadRimLedgerCsv);
+el("downloadRimHistoryCsvBtn").addEventListener("click", downloadCurrentRimHistoryCsv);
+el("downloadAllHistoryCsvBtn").addEventListener("click", downloadAllHistoryCsv);
 
 reloadAll();

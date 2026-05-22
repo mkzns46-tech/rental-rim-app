@@ -5,6 +5,7 @@ body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",
 header{display:flex;justify-content:space-between;gap:12px;align-items:center;background:linear-gradient(135deg,var(--main-dark),var(--main));color:#fff;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 8px 28px #1b433226}
 h1{font-size:28px;margin:0;color:#fff;font-weight:900;letter-spacing:0}
 h2{margin:0;font-size:21px;color:var(--main-dark);letter-spacing:0}
+h3{margin:16px 0 8px;font-size:16px;color:var(--main-dark)}
 p{margin:5px 0 0;color:#527161;line-height:1.5}
 header p{color:#e8fff0}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
@@ -12,6 +13,7 @@ header p{color:#e8fff0}
 .card.scanner{border:2px solid var(--main);background:linear-gradient(180deg,#fff 0%,#f7fff9 100%)}
 .wide{grid-column:1/-1}
 .section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.title-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .section-note{font-size:13px;color:#527161}
 .row{display:grid;grid-template-columns:1fr 1fr 120px;gap:10px}
 .row.two{grid-template-columns:1fr 1fr}
@@ -23,6 +25,7 @@ input,select,button,textarea{width:100%;border:1px solid #b7d7c4;border-radius:1
 input[type="checkbox"]{width:auto;min-height:auto}
 input:focus,select:focus,textarea:focus{outline:4px solid var(--main-light);border-color:var(--main)}
 button{min-height:48px;border:none;background:var(--main);color:#fff;font-weight:900;cursor:pointer;margin-top:10px}
+button.compact{width:auto;min-height:34px;margin-top:0;padding:8px 12px;font-size:13px}
 button:hover{background:var(--main-dark)}
 button.secondary{background:#dcebe1;color:var(--main-dark)}
 button.secondary:hover{background:#c6dfcf}
@@ -50,6 +53,7 @@ tr.clickable:hover,tr.selected-row{background:#f0fff4}
 .history-search-box{background:var(--main-soft);border:1px solid var(--border);border-radius:14px;padding:12px;margin:12px 0 14px}
 .file-button{display:block;width:100%;border:none;border-radius:14px;padding:12px;font-size:16px;background:var(--main);color:#fff;font-weight:900;cursor:pointer;margin-top:10px;text-align:center}
 .file-button input{display:none}
+.inline-csv{background:var(--main-soft);border:1px solid var(--border);border-radius:14px;padding:12px;margin-top:14px}
 .filters{display:grid;grid-template-columns:1fr 1fr 150px 150px 120px;gap:10px;align-items:end;background:var(--main-soft);border:1px solid var(--border);border-radius:14px;padding:12px;margin:12px 0 14px}
 .check-label{display:flex;align-items:center;gap:8px;margin:0 0 6px}
 .rim-ledger-section .table-wrap{max-height:620px}
