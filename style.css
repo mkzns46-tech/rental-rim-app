@@ -1,0 +1,60 @@
+*{box-sizing:border-box}
+:root{--main:#2d6a4f;--main-dark:#1b4332;--main-light:#d8f3dc;--main-soft:#f1fbf4;--bg:#eef7f1;--text:#10251b;--border:#cfe6d7}
+body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#eef7f1 0%,#f8fbf9 100%);color:var(--text)}
+.app{max-width:1200px;margin:0 auto;padding:18px}
+header{display:flex;justify-content:space-between;gap:12px;align-items:center;background:linear-gradient(135deg,var(--main-dark),var(--main));color:#fff;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 8px 28px #1b433226}
+h1{font-size:28px;margin:0;color:#fff;font-weight:900;letter-spacing:0}
+h2{margin:0;font-size:21px;color:var(--main-dark);letter-spacing:0}
+p{margin:5px 0 0;color:#527161;line-height:1.5}
+header p{color:#e8fff0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
+.card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 6px 22px #1b43320d}
+.card.scanner{border:2px solid var(--main);background:linear-gradient(180deg,#fff 0%,#f7fff9 100%)}
+.wide{grid-column:1/-1}
+.section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.section-note{font-size:13px;color:#527161}
+.row{display:grid;grid-template-columns:1fr 1fr 120px;gap:10px}
+.row.two{grid-template-columns:1fr 1fr}
+.row.three{grid-template-columns:1fr 1fr 1fr}
+.button-row{display:flex;gap:10px}
+.button-row button{flex:1}
+label{display:block;font-weight:800;font-size:14px;margin:12px 0 5px;color:var(--main-dark)}
+input,select,button,textarea{width:100%;border:1px solid #b7d7c4;border-radius:14px;padding:12px;font-size:16px;background:#fff}
+input:focus,select:focus,textarea:focus{outline:4px solid var(--main-light);border-color:var(--main)}
+button{min-height:48px;border:none;background:var(--main);color:#fff;font-weight:900;cursor:pointer;margin-top:10px}
+button:hover{background:var(--main-dark)}
+button.secondary{background:#dcebe1;color:var(--main-dark)}
+button.secondary:hover{background:#c6dfcf}
+button.danger{background:#9d0208}
+button.danger:hover{background:#6a040f}
+.required{display:inline-block;margin-left:5px;border-radius:999px;background:#ffe8e8;color:#b42318;border:1px solid #ffc9c9;padding:2px 7px;font-size:11px}
+.badge{display:inline-flex;align-items:center;border-radius:999px;background:var(--main);color:#fff;padding:6px 10px;font-size:13px;font-weight:900;white-space:nowrap}
+.badge.muted{background:#dcebe1;color:var(--main-dark)}
+.message{margin-top:12px;padding:12px;border-radius:12px;background:#edf6f0;color:var(--main-dark);font-weight:800;white-space:pre-wrap;border:1px solid #d6eadc;line-height:1.55}
+.message.ok{background:var(--main-light);border-color:#95d5b2}
+.message.err{background:#fff1f2;color:#9d0208;border-color:#fecaca}
+.message.warn{background:#fffaeb;color:#93370d;border-color:#fdb022}
+#barcodeInput,#returnBarcodeInput,#rimHistoryBarcodeInput{border:3px solid var(--main);background:#fff;font-size:24px;font-weight:900;padding:20px 18px;letter-spacing:.04em;box-shadow:0 0 0 5px var(--main-light)}
+#barcodeInput::placeholder,#returnBarcodeInput::placeholder,#rimHistoryBarcodeInput::placeholder{font-size:17px;letter-spacing:0;font-weight:700;color:#527161}
+.table-wrap{overflow:auto;max-height:460px;border:1px solid #dcebe1;border-radius:14px}
+.small-table{max-height:300px}
+table{width:100%;border-collapse:collapse;font-size:14px;background:#fff}
+th,td{padding:10px;border-bottom:1px solid #e4efe8;text-align:left;white-space:nowrap;vertical-align:top}
+th{position:sticky;top:0;background:#d8f3dc;color:var(--main-dark);z-index:1}
+tr.clickable{cursor:pointer}
+tr.clickable:hover,tr.selected-row{background:#f0fff4}
+.status-out{color:#175cd3;font-weight:900}
+.status-returned{color:var(--main);font-weight:900}
+.staff-delete-btn{background:#fee2e2;color:#991b1b;margin-top:0;padding:8px 10px;font-size:13px}
+.history-search-box{background:var(--main-soft);border:1px solid var(--border);border-radius:14px;padding:12px;margin:12px 0 14px}
+@media(max-width:800px){
+  .app{padding:10px}
+  header{display:block;border-radius:16px}
+  h1{font-size:21px}
+  .grid{grid-template-columns:1fr}
+  .row{grid-template-columns:1fr}
+  .row.two,.row.three{grid-template-columns:1fr}
+  .button-row{display:block}
+  .pc-only-section{display:none!important}
+  .card.scanner{grid-column:1/-1}
+}

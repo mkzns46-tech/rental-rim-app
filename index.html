@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>レンタルリム貸出管理</title>
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <div>
+          <h1>レンタルリム貸出管理</h1>
+          <p>注文選択、バーコード貸出、返却履歴をSupabaseで管理します</p>
+        </div>
+        <button id="reloadBtn" class="secondary">再読み込み</button>
+      </header>
+
+      <main class="grid">
+        <section class="card scanner">
+          <div class="section-title">
+            <div>
+              <h2>貸出登録</h2>
+              <p class="section-note">注文を選択してリムバーコードをスキャンします</p>
+            </div>
+          </div>
+
+          <div class="row">
+            <label>担当者 <span class="required">必須</span>
+              <select id="checkoutStaff"></select>
+            </label>
+            <label>注文検索
+              <input id="orderSearchInput" placeholder="注文番号・会員番号・顧客名">
+            </label>
+            <label>選択注文
+              <input id="selectedOrderNo" readonly placeholder="未選択">
+            </label>
+          </div>
+
+          <div class="table-wrap small-table">
+            <table>
+              <thead>
+                <tr><th>状態</th><th>注文番号</th><th>顧客</th><th>条件</th></tr>
+              </thead>
+              <tbody id="ordersBody"></tbody>
+            </table>
+          </div>
+
+          <form id="checkoutForm">
+            <label>バーコード入力
+              <input id="barcodeInput" autocomplete="off" placeholder="リムバーコードをスキャン、または手入力">
+            </label>
+            <div id="scanInfo" class="message">注文を選択後、リムバーコードを入力します</div>
+            <button type="submit">貸出登録</button>
+          </form>
+          <div id="checkoutMessage" class="message">起動中...</div>
+        </section>
+
+        <section class="card scanner">
+          <div class="section-title">
+            <div>
+              <h2>返却登録</h2>
+              <p class="section-note">リムバーコードで貸出中情報を確認します</p>
+            </div>
+          </div>
+
+          <label>返却担当者 <span class="required">必須</span>
+            <select id="returnStaff"></select>
+          </label>
+          <label>バーコード入力
+            <input id="returnBarcodeInput" autocomplete="off" placeholder="返却するリムバーコードをスキャン">
+          </label>
+          <button id="scanReturnBtn" class="secondary" type="button">貸出中情報を表示</button>
+          <div id="returnInfo" class="message">バーコード入力後、貸出中の注文情報を表示します</div>
+          <label>返却メモ
+            <textarea id="returnMemo" rows="2" placeholder="傷・不足品・確認事項など"></textarea>
+          </label>
+          <button id="returnBtn" class="danger" type="button">返却済みに変更</button>
+          <div id="returnMessage" class="message"></div>
+        </section>
+
+        <section class="card pc-only-section">
+          <div class="section-title">
+            <h2>担当者設定</h2>
+            <div id="staffCountBadge" class="badge">担当者：0人</div>
+          </div>
+          <form id="staffForm">
+            <label>担当者名
+              <input id="staffNameInput" placeholder="例：田中">
+            </label>
+            <button type="submit">担当者を追加</button>
+          </form>
+          <div class="table-wrap small-table">
+            <table>
+              <thead><tr><th>担当者名</th><th>操作</th></tr></thead>
+              <tbody id="staffListBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card product-admin-section pc-only-section">
+          <div class="section-title">
+            <h2>リム登録</h2>
+            <div id="rimFormModeBadge" class="badge muted">新規 / 更新</div>
+          </div>
+          <form id="rimForm">
+            <div class="row two">
+              <label>リム番号 <span class="required">必須</span>
+                <input id="rimNoInput" required placeholder="例：RIM-001">
+              </label>
+              <label>バーコード <span class="required">必須</span>
+                <input id="rimBarcodeInput" required placeholder="スキャンまたは手入力">
+              </label>
+            </div>
+            <div class="row three">
+              <label>サイズ
+                <input id="rimSizeInput" placeholder="例：M">
+              </label>
+              <label>ポンド
+                <input id="rimPoundInput" placeholder="例：10">
+              </label>
+              <label>種類
+                <input id="rimTypeInput" placeholder="例：標準">
+              </label>
+            </div>
+            <label>備考
+              <input id="rimNotesInput" placeholder="自由入力">
+            </label>
+            <label>状態
+              <select id="rimStatusInput">
+                <option value="在庫">在庫</option>
+                <option value="貸出中">貸出中</option>
+                <option value="メンテナンス">メンテナンス</option>
+                <option value="廃棄">廃棄</option>
+              </select>
+            </label>
+            <div class="button-row">
+              <button type="submit">リムを登録 / 更新</button>
+              <button id="clearRimFormBtn" type="button" class="secondary">入力クリア</button>
+            </div>
+          </form>
+          <div id="rimFormMessage" class="message">リム台帳をアプリから登録できます</div>
+        </section>
+
+        <section class="card pc-only-section">
+          <div class="section-title">
+            <h2>リム台帳</h2>
+            <div id="rimCountBadge" class="badge">登録数：0本</div>
+          </div>
+          <p class="section-note">リム追加・編集はSupabaseの rental_rims で行います</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>状態</th><th>リム番号</th><th>バーコード</th><th>内容</th><th>貸出先</th></tr>
+              </thead>
+              <tbody id="rimsBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card wide">
+          <div class="section-title">
+            <h2>リム別履歴</h2>
+            <div id="rimHistoryBadge" class="badge muted">リムを選択してください</div>
+          </div>
+          <div class="history-search-box">
+            <label>リム履歴検索
+              <input id="rimHistoryBarcodeInput" placeholder="バーコードを入力またはスキャン">
+            </label>
+          </div>
+          <button id="loadRimHistoryBtn" class="secondary" type="button">履歴を表示</button>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>貸出日時</th><th>返却日時</th><th>状態</th><th>リム番号</th><th>担当者</th><th>注文番号</th><th>顧客名</th><th>警告/メモ</th></tr>
+              </thead>
+              <tbody id="rimHistoryBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card wide pc-only-section">
+          <div class="section-title">
+            <h2>全体履歴</h2>
+            <div id="historyCountBadge" class="badge muted">履歴：0件</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>貸出日時</th><th>返却日時</th><th>状態</th><th>リム番号</th><th>担当者</th><th>注文番号</th><th>顧客名</th><th>警告/メモ</th></tr>
+              </thead>
+              <tbody id="historyBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
