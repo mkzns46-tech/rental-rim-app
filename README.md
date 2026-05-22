@@ -14,8 +14,5 @@
 この版はフロントエンドからSupabaseへ直接書き込みます。
 既存の在庫管理シートと同じ運用に近いですが、公開URLにする場合はRLS設計をあとで絞るのがおすすめです。
 
-GitHub URL:
-https://github.com/mkzns46-tech/rental-rim-app
-
 公開URL:
-Vercelでデプロイ後にここへ追記します。
+https://rental-rim-app.vercel.app
