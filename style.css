@@ -20,6 +20,7 @@ header p{color:#e8fff0}
 .button-row button{flex:1}
 label{display:block;font-weight:800;font-size:14px;margin:12px 0 5px;color:var(--main-dark)}
 input,select,button,textarea{width:100%;border:1px solid #b7d7c4;border-radius:14px;padding:12px;font-size:16px;background:#fff}
+input[type="checkbox"]{width:auto;min-height:auto}
 input:focus,select:focus,textarea:focus{outline:4px solid var(--main-light);border-color:var(--main)}
 button{min-height:48px;border:none;background:var(--main);color:#fff;font-weight:900;cursor:pointer;margin-top:10px}
 button:hover{background:var(--main-dark)}
@@ -47,6 +48,11 @@ tr.clickable:hover,tr.selected-row{background:#f0fff4}
 .status-returned{color:var(--main);font-weight:900}
 .staff-delete-btn{background:#fee2e2;color:#991b1b;margin-top:0;padding:8px 10px;font-size:13px}
 .history-search-box{background:var(--main-soft);border:1px solid var(--border);border-radius:14px;padding:12px;margin:12px 0 14px}
+.file-button{display:block;width:100%;border:none;border-radius:14px;padding:12px;font-size:16px;background:var(--main);color:#fff;font-weight:900;cursor:pointer;margin-top:10px;text-align:center}
+.file-button input{display:none}
+.filters{display:grid;grid-template-columns:1fr 1fr 150px 150px 120px;gap:10px;align-items:end;background:var(--main-soft);border:1px solid var(--border);border-radius:14px;padding:12px;margin:12px 0 14px}
+.check-label{display:flex;align-items:center;gap:8px;margin:0 0 6px}
+.rim-ledger-section .table-wrap{max-height:620px}
 @media(max-width:800px){
   .app{padding:10px}
   header{display:block;border-radius:16px}
@@ -57,4 +63,5 @@ tr.clickable:hover,tr.selected-row{background:#f0fff4}
   .button-row{display:block}
   .pc-only-section{display:none!important}
   .card.scanner{grid-column:1/-1}
+  .filters{grid-template-columns:1fr}
 }

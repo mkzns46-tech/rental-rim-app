@@ -70,12 +70,32 @@ function renderOrders() {
 }
 
 function renderRims() {
-  el("rimCountBadge").textContent = `登録数：${state.rims.length}本`;
-  el("rimsBody").innerHTML = state.rims.map(r => {
+  const rows = filterRims();
+  el("rimCountBadge").textContent = `表示：${rows.length}本 / 登録：${state.rims.length}本`;
+  el("rimsBody").innerHTML = rows.map(r => {
     const spec = [r.size, r.pound, r.rim_type, r.notes].filter(Boolean).join(" / ");
     const current = [r.current_member_code, r.current_customer_name].filter(Boolean).join(" / ") || r.current_order_no || "";
     return `<tr class="clickable" onclick="selectRimForEdit('${encodeURIComponent(r.rim_no)}')"><td>${status(r.status)}</td><td>${esc(r.rim_no)}</td><td>${esc(r.barcode)}</td><td>${esc(spec)}</td><td>${esc(current)}</td></tr>`;
   }).join("") || '<tr><td colspan="5">リムが未登録です</td></tr>';
+}
+
+function filterRims() {
+  const customerQ = el("customerRimSearchInput")?.value.trim().toLowerCase() || "";
+  const rimQ = el("rimSearchInput")?.value.trim().toLowerCase() || "";
+  const sizeQ = el("availableSizeFilter")?.value.trim().toLowerCase() || "";
+  const poundQ = el("availablePoundFilter")?.value.trim().toLowerCase() || "";
+  const availableOnly = el("availableOnlyFilter")?.checked || sizeQ || poundQ;
+
+  return state.rims.filter(r => {
+    const customerText = [r.current_member_code, r.current_customer_name, r.current_order_no].join(" ").toLowerCase();
+    const rimText = [r.rim_no, r.barcode, r.size, r.pound, r.rim_type, r.notes].join(" ").toLowerCase();
+    if (customerQ && !customerText.includes(customerQ)) return false;
+    if (rimQ && !rimText.includes(rimQ)) return false;
+    if (availableOnly && r.status !== STATUS_AVAILABLE) return false;
+    if (sizeQ && String(r.size || "").toLowerCase() !== sizeQ) return false;
+    if (poundQ && String(r.pound || "").toLowerCase() !== poundQ) return false;
+    return true;
+  });
 }
 
 function renderHistory() {
@@ -154,6 +174,109 @@ async function saveRim(event) {
   clearRimForm();
   await reloadAll();
 }
+
+async function importRimCsv(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const text = await file.text();
+  const rows = parseCsv(text);
+  if (rows.length < 2) return showMessage("rimCsvMessage", "CSVにデータ行がありません。", "err");
+
+  const headers = rows[0].map(normalizeHeader);
+  let created = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  for (const row of rows.slice(1)) {
+    if (row.every(v => !String(v || "").trim())) continue;
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = row[i] || "");
+    const payload = mapRimCsvRow(obj);
+    if (!payload.rim_no || !payload.barcode) {
+      skipped++;
+      continue;
+    }
+    const existing = state.rims.find(r => r.rim_no === payload.rim_no || r.barcode === payload.barcode);
+    if (existing) {
+      await sb(`rental_rims?id=eq.${existing.id}`, { method: "PATCH", body: JSON.stringify(payload) });
+      updated++;
+    } else {
+      await sb("rental_rims", { method: "POST", body: JSON.stringify([payload]) });
+      created++;
+    }
+  }
+  event.target.value = "";
+  showMessage("rimCsvMessage", `CSV取り込み完了\n追加: ${created}\n更新: ${updated}\nスキップ: ${skipped}`, "ok");
+  await reloadAll();
+}
+
+function downloadRimSampleCsv() {
+  const csv = [
+    ["rim_no", "barcode", "size", "pound", "rim_type", "notes", "status"],
+    ["RIM-001", "123456789001", "M", "10", "標準", "サンプル", "在庫"]
+  ].map(row => row.map(csvCell).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "rental_rims_sample.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function mapRimCsvRow(obj) {
+  return {
+    rim_no: pick(obj, ["rim_no", "リム番号", "管理番号"]),
+    barcode: pick(obj, ["barcode", "バーコード"]),
+    size: pick(obj, ["size", "サイズ"]),
+    pound: pick(obj, ["pound", "ポンド"]),
+    rim_type: pick(obj, ["rim_type", "type", "種類", "タイプ"]),
+    notes: pick(obj, ["notes", "note", "備考", "メモ"]),
+    status: pick(obj, ["status", "状態"]) || STATUS_AVAILABLE
+  };
+}
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let quote = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i + 1];
+    if (quote && ch === '"' && next === '"') {
+      cell += '"';
+      i++;
+    } else if (ch === '"') {
+      quote = !quote;
+    } else if (!quote && ch === ",") {
+      row.push(cell);
+      cell = "";
+    } else if (!quote && (ch === "\n" || ch === "\r")) {
+      if (ch === "\r" && next === "\n") i++;
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += ch;
+    }
+  }
+  row.push(cell);
+  rows.push(row);
+  return rows.filter(r => r.some(v => String(v).trim()));
+}
+
+function pick(obj, keys) {
+  for (const key of keys) {
+    const normalized = normalizeHeader(key);
+    if (obj[normalized] !== undefined && obj[normalized] !== "") return String(obj[normalized]).trim();
+  }
+  return "";
+}
+
+function normalizeHeader(value) { return String(value || "").replace(/^\uFEFF/, "").trim(); }
+function csvCell(value) { return `"${String(value ?? "").replace(/"/g, '""')}"`; }
 
 async function addStaff(event) {
   event.preventDefault();
@@ -313,6 +436,11 @@ function fmt(value) { if (!value) return ""; const d = new Date(value); return N
 
 el("reloadBtn").addEventListener("click", reloadAll);
 el("orderSearchInput").addEventListener("input", renderOrders);
+el("customerRimSearchInput").addEventListener("input", renderRims);
+el("rimSearchInput").addEventListener("input", renderRims);
+el("availableSizeFilter").addEventListener("input", renderRims);
+el("availablePoundFilter").addEventListener("input", renderRims);
+el("availableOnlyFilter").addEventListener("change", renderRims);
 el("checkoutForm").addEventListener("submit", checkout);
 el("barcodeInput").addEventListener("change", previewCheckout);
 el("scanReturnBtn").addEventListener("click", scanReturn);
@@ -323,5 +451,7 @@ el("loadRimHistoryBtn").addEventListener("click", loadRimHistory);
 el("staffForm").addEventListener("submit", addStaff);
 el("rimForm").addEventListener("submit", saveRim);
 el("clearRimFormBtn").addEventListener("click", clearRimForm);
+el("rimCsvFile").addEventListener("change", importRimCsv);
+el("downloadRimSampleCsvBtn").addEventListener("click", downloadRimSampleCsv);
 
 reloadAll();

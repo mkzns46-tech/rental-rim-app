@@ -142,12 +142,43 @@
           <div id="rimFormMessage" class="message">リム台帳をアプリから登録できます</div>
         </section>
 
-        <section class="card pc-only-section">
+        <section class="card pc-only-section csv-admin-section">
+          <div class="section-title">
+            <h2>リムCSV取り込み</h2>
+          </div>
+          <p class="section-note">対応列：rim_no, barcode, size, pound, rim_type, notes, status</p>
+          <p class="section-note">日本語見出し：リム番号, バーコード, サイズ, ポンド, 種類, 備考, 状態</p>
+          <label class="file-button">CSVを選択して取り込み
+            <input id="rimCsvFile" type="file" accept=".csv,text/csv">
+          </label>
+          <button id="downloadRimSampleCsvBtn" class="secondary" type="button">サンプルCSV</button>
+          <div id="rimCsvMessage" class="message">同じリム番号またはバーコードがある場合は更新します</div>
+        </section>
+
+        <section class="card pc-only-section wide rim-ledger-section">
           <div class="section-title">
             <h2>リム台帳</h2>
             <div id="rimCountBadge" class="badge">登録数：0本</div>
           </div>
           <p class="section-note">リム追加・編集はSupabaseの rental_rims で行います</p>
+          <div class="filters">
+            <label>顧客検索
+              <input id="customerRimSearchInput" placeholder="会員番号・顧客名・注文番号">
+            </label>
+            <label>リム検索
+              <input id="rimSearchInput" placeholder="リム番号・バーコード・種類・備考">
+            </label>
+            <label>在庫サイズ
+              <input id="availableSizeFilter" placeholder="例：M">
+            </label>
+            <label>在庫ポンド
+              <input id="availablePoundFilter" placeholder="例：10">
+            </label>
+            <label class="check-label">
+              <input id="availableOnlyFilter" type="checkbox">
+              在庫のみ
+            </label>
+          </div>
           <div class="table-wrap">
             <table>
               <thead>
